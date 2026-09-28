@@ -24,6 +24,7 @@
     ["idphoto", "id-photo.html", "증명·여권사진"],
     ["profile", "profile.html", "프로필사진"],
     ["gallery", "gallery.html", "갤러리"],
+    ["price", "price.html", "가격안내"],
     ["location", "location.html", "오시는 길"],
   ];
 
@@ -117,16 +118,44 @@
   });
 
   /* ---------- 가격표 ---------- */
+  const priceText = (p) => p || '<span class="ask">가격 문의</span>';
+
+  function priceHTML(cat, withTitle) {
+    const cards = withTitle ? [] : cat.cards || []; // 전체 가격표 페이지에서는 목록만 보여줌
+    const groups = cat.groups || [];
+    const notes = cat.notes || [];
+    return `
+      ${withTitle ? `<h2 class="price-cat-title">${cat.label}</h2>` : ""}
+      ${cards.length ? `<div class="price-grid${cards.length === 2 ? " two" : ""}">${cards.map((p) => `
+        <article class="price-card${p.best ? " best" : ""}">
+          ${p.best ? '<span class="badge">인기</span>' : ""}
+          <h3>${p.title}</h3>
+          <p class="price">${priceText(p.price)}</p>
+          <ul>${p.items.map((i) => `<li>${i}</li>`).join("")}</ul>
+        </article>`).join("")}</div>` : ""}
+      ${groups.length ? `<div class="price-table">${groups.map((g) => `
+        <section class="price-group">
+          <h3>${g.title}</h3>
+          <ul>${g.rows.map(([name, price, desc]) => `
+            <li><div class="pt-name">${name}${desc ? `<small>${desc}</small>` : ""}</div><div class="pt-price">${priceText(price)}</div></li>`).join("")}
+          </ul>
+        </section>`).join("")}</div>` : ""}
+      ${notes.length ? `<ul class="price-notes">${notes.map((n) => `<li>${n}</li>`).join("")}</ul>` : ""}`;
+  }
+
   document.querySelectorAll("[data-prices]").forEach((el) => {
-    const list = PRICES[el.dataset.prices] || [];
-    el.innerHTML = list.map((p) => `
-      <article class="price-card${p.best ? " best" : ""}">
-        ${p.best ? '<span class="badge">인기</span>' : ""}
-        <h3>${p.title}</h3>
-        <p class="price">${p.price || '<span class="ask">가격 문의</span>'}</p>
-        <ul>${p.items.map((i) => `<li>${i}</li>`).join("")}</ul>
-      </article>`).join("");
+    const cat = PRICES[el.dataset.prices];
+    if (cat) el.innerHTML = priceHTML(cat, false);
   });
+
+  /* 가격안내 페이지: 모든 분야를 차례로 */
+  const all = document.querySelector("[data-prices-all]");
+  if (all) {
+    const keys = Object.keys(PRICES);
+    const tabs = document.querySelector("[data-price-tabs]");
+    if (tabs) tabs.innerHTML = keys.map((k) => `<a href="#p-${k}">${PRICES[k].label}</a>`).join("");
+    all.innerHTML = keys.map((k) => `<div class="price-cat" id="p-${k}">${priceHTML(PRICES[k], true)}</div>`).join("");
+  }
 
   /* ---------- 갤러리 ---------- */
   const TYPE_LABEL = { family: "가족사진", idphoto: "증명·여권사진", profile: "프로필사진" };
